@@ -3,416 +3,468 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>珠宝学院综合积分管理系统 · 在线版</title>
+<title>珠宝学院综合积分管理系统（宿舍批量版）</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net.cn/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <style>
-:root{--primary:#7B1FA2;--primary-light:#AB47BC;--primary-dark:#4A148C;--secondary:#9C27B0;--accent1:#B39DDB;--accent2:#673AB7;--accent3:#8E24AA;--white:#FFFFFF;--light:#F7F3FB;--border:#E4D9F0;--text:#2D2438;--text-light:#7E6B92;--boy:#7E57C2;--girl:#EC407A;--radius:16px;--radius-full:1000px}
+:root{--primary:#7B1FA2;--primary-dark:#4A148C;--secondary:#9C27B0;--light:#F7F3FB;--border:#E4D9F0;--text:#2D2438;--text-light:#7E6B92;}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Nunito','Noto Sans SC',sans-serif;background:var(--light);color:var(--text);line-height:1.6;min-height:100vh}
-h1,h2,h3,h4{font-family:'Quicksand','Noto Sans SC',sans-serif;font-weight:800}
-.app-container{max-width:1200px;margin:0 auto;padding:20px 10px}
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:15px;flex-wrap:wrap}
-.logo{font-family:'Quicksand',sans-serif;font-size:22px;font-weight:900;color:var(--primary-dark)}
-.header-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.btn{font-family:'Quicksand',sans-serif;font-weight:700;font-size:14px;padding:8px 16px;border-radius:var(--radius-full);border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;text-decoration:none}
-.btn-primary{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);color:#fff}
-.btn-secondary{background:linear-gradient(135deg,var(--secondary) 0%,var(--accent3) 100%);color:#fff}
-.btn-danger{background:#E91E63;color:#fff}
+body{font-family:'Nunito','Noto Sans SC',sans-serif;background:var(--light);color:var(--text);padding:20px}
+.app{max-width:1200px;margin:0 auto}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.btn{padding:8px 16px;border-radius:20px;border:none;cursor:pointer;font-weight:bold;color:#fff;background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);display:inline-flex;align-items:center;gap:5px;transition:all 0.2s}
+.btn:hover{opacity:0.9;transform:translateY(-1px)}
 .btn-white{background:#fff;color:var(--text);border:2px solid var(--border)}
-.btn-sm{padding:5px 10px;font-size:12px}
-.btn-icon{width:32px;height:32px;padding:0;border-radius:50%}
-.card{background:#fff;border-radius:var(--radius);box-shadow:0 4px 15px rgba(74,20,140,.08);margin-bottom:20px;border:2px solid var(--border);overflow:hidden}
-.card-header{padding:15px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--border);flex-wrap:wrap;gap:10px}
-.card-title{font-size:18px;font-weight:800;color:var(--primary-dark)}
-.card-body{padding:20px}
-.form-group{margin-bottom:12px}
-.form-control{width:100%;padding:10px;border:2px solid var(--border);border-radius:8px;font-size:14px;outline:none}
-.form-control:focus{border-color:var(--primary-light)}
-.student-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:15px;padding:10px}
-.student-card{background:#fff;border-radius:12px;padding:15px;text-align:center;border:2px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,.04);position:relative}
-.student-card.male{border-color:var(--boy)}.student-card.female{border-color:var(--girl)}
-.student-card.has-warning{border-color:#E91E63;background:#FFF0F5}
-.student-avatar{width:50px;height:50px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff}
-.student-avatar.male{background:var(--boy)}.student-avatar.female{background:var(--girl)}
-.student-name{font-weight:800;font-size:16px}
-.student-meta{font-size:12px;color:var(--text-light)}
-.student-points{margin-top:8px;font-weight:800;color:var(--primary);font-size:20px}
-.student-volunteer{margin-top:5px;font-weight:700;color:#2E7D32;font-size:14px;background:#E8F5E9;border-radius:8px;padding:3px 8px;display:inline-block;}
-.tabs{display:flex;background:#fff;border-radius:var(--radius) var(--radius) 0 0;border-bottom:3px solid var(--primary);overflow:hidden;margin-bottom:20px}
-.tab-btn{flex:1;padding:12px;background:transparent;border:none;font-weight:700;cursor:pointer;color:var(--text-light);font-size:15px}
-.tab-btn.active{color:var(--primary);border-bottom:3px solid var(--primary);margin-bottom:-3px;background:#fff}
+.btn-danger{background:#E91E63}
+.btn-sm{padding:4px 10px;font-size:12px;border-radius:12px}
+.btn-addvol{background:#2E7D32}
+.card{background:#fff;border-radius:16px;padding:20px;margin-bottom:20px;border:2px solid var(--border);box-shadow:0 4px 15px rgba(0,0,0,0.03)}
+.tabs{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.tab-btn{padding:10px 20px;border:none;border-radius:10px;cursor:pointer;font-weight:bold;background:#fff;border:2px solid var(--border);color:var(--text-light)}
+.tab-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 .tab-content{display:none;}
 .tab-content.active{display:block;}
-.rank-item{display:flex;align-items:center;padding:12px;border-bottom:1px solid var(--border);background:#fff;border-radius:8px;margin-bottom:8px}
-.rank-item:nth-child(1) .rank-num{background:#FFD700;color:#fff}
-.rank-item:nth-child(2) .rank-num{background:#C0C0C0;color:#fff}
-.rank-item:nth-child(3) .rank-num{background:#CD7F32;color:#fff}
-.rank-num{width:26px;height:26px;border-radius:50%;background:var(--light);display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:13px;margin-right:15px;}
-.rank-name{flex:1;font-weight:bold;font-size:15px;}
-.rank-hours{color:#2E7D32;font-weight:900;font-size:16px;}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;overflow-y:auto}
-.modal-content{background:#fff;border-radius:var(--radius);width:90%;max-width:500px;margin:10vh auto}
-.modal-header{padding:15px 20px;background:var(--primary);color:#fff;display:flex;justify-content:space-between;align-items:center}
-.modal-body{padding:20px}
-.close{color:#fff;font-size:24px;cursor:pointer}
-.rules-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px}
-.rule-option{padding:10px;background:var(--light);border-radius:8px;cursor:pointer;display:flex;justify-content:space-between}
-.rule-option:hover{background:var(--border)}
+
+/* 学生与宿舍卡片 */
+.grid-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:15px}
+.item-card{border:2px solid var(--border);border-radius:12px;padding:15px;text-align:center;position:relative;background:#fff;cursor:pointer;transition:all 0.2s}
+.item-card:hover{transform:translateY(-2px);box-shadow:0 5px 15px rgba(123,31,162,0.1)}
+.item-card.male{border-color:#7E57C2}
+.item-card.female{border-color:#EC407A}
+.student-points{color:var(--primary);font-weight:900;font-size:20px;margin:5px 0}
+.student-vol{color:#2E7D32;font-weight:bold;background:#E8F5E9;padding:4px;border-radius:8px;font-size:13px;margin-top:5px}
+.dorm-title{font-size:20px;font-weight:900;color:var(--primary-dark);margin-bottom:10px}
+
+/* 模态框 */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;padding-top:5vh;overflow-y:auto}
+.modal-content{background:#fff;width:90%;max-width:600px;margin:0 auto;border-radius:16px;padding:20px;margin-bottom:5vh}
+.modal-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--border);padding-bottom:10px;margin-bottom:15px}
+.close{font-size:24px;cursor:pointer;color:var(--text-light)}
+.form-group{margin-bottom:15px}
+.form-control{width:100%;padding:10px;border:2px solid var(--border);border-radius:8px;font-size:14px;outline:none}
 .hidden{display:none!important}
-.user-bar{display:flex;align-items:center;gap:10px;background:#fff;padding:6px 14px;border-radius:var(--radius-full);border:2px solid var(--border);font-weight:700;font-size:14px}
-.admin-only{display:none!important;}
-body.is-admin .admin-only{display:inline-flex!important;}
-body.is-admin .admin-only-block{display:block!important;}
+.admin-only{display:none!important}
+body.is-admin .admin-only{display:inline-flex!important}
+body.is-admin .admin-only-block{display:block!important}
+
+/* 宿舍成员勾选列表 */
+.member-list{max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:15px}
+.member-item{display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px dashed var(--border);cursor:pointer}
+.member-item:last-child{border-bottom:none}
+.member-item input[type="checkbox"]{width:18px;height:18px;cursor:pointer;}
+
+.rule-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px}
+.rule-option{padding:10px;background:var(--light);border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;border:1px solid transparent}
+.rule-option:hover{background:var(--border);border-color:var(--primary)}
 </style>
 </head>
 <body>
 
-<div class="app-container">
-  <header class="header">
-    <div class="logo">珠宝学院综合积分系统</div>
-    <div class="header-controls">
-      <div class="user-bar">
-        <span id="userRoleText">未登录</span>
-        <button id="loginBtn" class="btn btn-sm btn-primary">登录 / 注册</button>
-        <button id="logoutBtn" class="btn btn-sm btn-white hidden">退出</button>
-      </div>
-      <button id="importExcelBtn" class="btn btn-secondary admin-only"><i class="fas fa-file-import"></i> 批量导入</button>
-      <input type="file" id="excelFile" class="hidden" accept=".xlsx,.xls">
-      <button id="exportDataBtn" class="btn btn-secondary"><i class="fas fa-file-excel"></i> 导出数据</button>
+<div class="app">
+  <div class="header">
+    <h2>珠宝学院综合积分管理系统</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <span id="userName" style="font-weight:bold;padding:8px 0;color:var(--primary)">未登录</span>
+      <button id="loginBtn" class="btn">登录 / 注册</button>
+      <button id="logoutBtn" class="btn btn-white hidden">退出</button>
+      <button id="importBtn" class="btn admin-only"><i class="fas fa-file-import"></i> 批量导入</button>
+      <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xls">
     </div>
-  </header>
+  </div>
 
   <div class="tabs">
-    <button class="tab-btn active" data-tab="students">综合积分与志愿管理</button>
-    <button class="tab-btn" data-tab="volunteer">志愿服务时长榜</button>
+    <button class="tab-btn active" onclick="switchTab('list')">学生列表</button>
+    <button class="tab-btn" onclick="switchTab('dorm')">宿舍管理</button>
+    <button class="tab-btn" onclick="switchTab('rank')">志愿时长榜</button>
   </div>
-  
-  <div id="students" class="tab-content active">
+
+  <!-- 学生列表 -->
+  <div id="tab-list" class="tab-content active">
     <div class="card admin-only-block" style="margin-bottom:20px;">
-      <div class="card-header"><h2 class="card-title">手动添加学生</h2></div>
-      <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap;">
-        <input type="text" id="studentNo" class="form-control" placeholder="学号" style="flex:1;">
-        <input type="text" id="studentName" class="form-control" placeholder="姓名" style="flex:1;">
-        <select id="studentGender" class="form-control" style="width:100px;">
+      <h3 style="margin-bottom:10px;color:var(--primary-dark)">添加学生</h3>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <input type="text" id="addNo" class="form-control" placeholder="学号" style="flex:1;min-width:120px;">
+        <input type="text" id="addName" class="form-control" placeholder="姓名" style="flex:1;min-width:120px;">
+        <input type="text" id="addDorm" class="form-control" placeholder="宿舍号（如301）" style="flex:1;min-width:120px;">
+        <select id="addGender" class="form-control" style="width:100px;">
           <option value="male">男生</option>
           <option value="female">女生</option>
         </select>
-        <button id="addStudentBtn" class="btn btn-primary">添加</button>
+        <button onclick="addStudent()" class="btn">添加</button>
       </div>
     </div>
     <div class="card">
-      <div class="card-body">
-        <div id="allStudents" class="student-list"></div>
-      </div>
+      <div class="grid-list" id="studentList"></div>
     </div>
   </div>
 
-  <div id="volunteer" class="tab-content">
+  <!-- 宿舍管理 -->
+  <div id="tab-dorm" class="tab-content">
     <div class="card">
-      <div class="card-header"><h2 class="card-title">志愿服务时长排行榜</h2></div>
-      <div class="card-body">
-        <p style="color:var(--text-light); margin-bottom:15px; font-size:13px;">此榜单仅统计志愿时长，不参与综合积分折算。</p>
-        <ul id="volunteerRankList" style="list-style:none;padding:0;"></ul>
-      </div>
+      <div class="grid-list" id="dormList"></div>
+    </div>
+  </div>
+
+  <!-- 志愿榜 -->
+  <div id="tab-rank" class="tab-content">
+    <div class="card">
+      <h3 style="margin-bottom:15px;color:var(--primary-dark)">志愿服务时长排行榜</h3>
+      <p style="color:var(--text-light); margin-bottom:15px; font-size:13px;">此榜单仅统计志愿时长，不参与综合积分折算。</p>
+      <ul id="rankList" style="list-style:none;"></ul>
     </div>
   </div>
 </div>
 
-<div id="modal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header"><h3 id="modalTitle">操作</h3><span class="close">&times;</span></div>
-    <div class="modal-body" id="modalContent"></div>
-  </div>
+<!-- 模态框容器 -->
+<div class="modal" id="modal">
+  <div class="modal-content" id="modalContent"></div>
 </div>
 
 <script>
 /* ============================================================
- * 1. 你的 Supabase 配置 (保持你原有的就行，不用改)
+ * ★ 1. 填入你的 Supabase 配置
  * ============================================================ */
-const SUPABASE_URL = 'https://yjexkrbxgzqusoojxbke.supabase.co'; // ★ 填入你的 URL
+const SUPABASE_URL = 'https://yjexkrbxgzqusoojxbke.supabase.co'; // 替换这里
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqZXhrcmJ4Z3pxdXNvb2p4YmtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2MjA2MDAsImV4cCI6MjEwODE5NjYwMH0.-loqPcHO_CSJLCt1f1ZFPWCzEqBNABTOwVcN5yRnCdA
-'; // ★ 填入你的 Key
+
+'; // 替换这里
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* ============================================================
- * 全局状态
- * ============================================================ */
 let currentUser = null;
-let isAdmin = false;
-let isAnonymous = false;
 let operatorName = '';
 let students = [];
+let history = [];
 let rules = [];
 
-/* ============================================================
- * 登录逻辑 (使用 Supabase 原生 Auth)
- * ============================================================ */
-document.getElementById('loginBtn').onclick = () => {
-  document.getElementById('modalTitle').textContent = '登录 / 注册';
-  document.getElementById('modalContent').innerHTML = `
-    <div class="form-group"><input type="text" id="authUser" class="form-control" placeholder="操作人姓名（如：张老师）"></div>
-    <div class="form-group"><input type="password" id="authPass" class="form-control" placeholder="密码（至少6位）"></div>
-    <div style="display:flex;gap:10px;margin-top:15px;">
-      <button class="btn btn-primary" style="flex:1" onclick="doAuth('login')">登录</button>
-      <button class="btn btn-secondary" style="flex:1" onclick="doAuth('register')">注册</button>
-    </div>
-    <p style="text-align:center;margin-top:15px;font-size:12px;color:#888;">管理员请注册后，去 Supabase 后台提权。</p>
-  `;
-  document.getElementById('modal').style.display = 'block';
-};
-
-async function doAuth(mode) {
-  const u = document.getElementById('authUser').value.trim();
-  const p = document.getElementById('authPass').value;
-  if (!u || !p) return alert('请填写姓名和密码');
-  const email = `${u.toLowerCase()}@jewelry-points.local`;
-  
-  try {
-    if (mode === 'register') {
-      const { data, error } = await sb.auth.signUp({ email, password: p, options: { data: { username: u } } });
-      if (error) throw error;
-      if (!data.session) return alert('注册成功，请尝试登录。');
-    } else {
-      const { error } = await sb.auth.signInWithPassword({ email, password: p });
-      if (error) throw error;
-    }
-    document.getElementById('modal').style.display = 'none';
-  } catch (err) {
-    alert((mode === 'login' ? '登录' : '注册') + '失败：' + err.message);
-  }
-}
-
-document.getElementById('logoutBtn').onclick = async () => {
-  await sb.auth.signOut();
-  location.reload();
-};
-
-/* ============================================================
- * 数据加载
- * ============================================================ */
-async function loadData() {
-  const [rulesRes, stuRes] = await Promise.all([
-    sb.from('rules').select('*').order('created_at', { ascending: false }),
-    sb.from('students').select('*').order('student_no')
-  ]);
-  rules = rulesRes.data || [];
-  students = stuRes.data || [];
-  updateUI();
-}
-
-/* ============================================================
- * 计算与渲染
- * ============================================================ */
-function getTotalPoints(s) { return 100; } // 因为精简版没拉取历史，暂显示100，如需历史请用完整版
-function getVolunteerHours(s) { return Number(s.volunteer_hours) || 0; }
-
-function updateUI() {
-  const el = document.getElementById('allStudents');
-  el.innerHTML = '';
-  if (!students.length) el.innerHTML = '<p style="grid-column:1/-1;text-align:center;">暂无学生</p>';
-  
-  students.forEach(s => {
-    const hours = getVolunteerHours(s);
-    const card = document.createElement('div');
-    card.className = `student-card ${s.gender}`;
-    card.innerHTML = `
-      <div class="student-avatar ${s.gender}">${s.name.charAt(0)}</div>
-      <div class="student-name">${s.name}</div>
-      <div class="student-meta">${s.student_no}</div>
-      <div class="student-points">100.00 分</div>
-      <div class="student-volunteer"><i class="fas fa-clock"></i> 志愿 ${hours} 小时</div>
-      <div class="admin-only" style="margin-top:10px;justify-content:center;gap:5px;">
-        <button class="btn btn-sm btn-primary" onclick="openPointsModal('${s.id}','add')" title="加分">+</button>
-        <button class="btn btn-sm btn-danger" onclick="openPointsModal('${s.id}','sub')" title="减分">-</button>
-        <button class="btn btn-sm" style="background:#2E7D32;color:#fff;" onclick="openVolunteerModal('${s.id}')" title="加志愿时长"><i class="fas fa-clock"></i></button>
-      </div>
-    `;
-    el.appendChild(card);
-  });
-
-  // 志愿时长榜
-  const rankEl = document.getElementById('volunteerRankList');
-  rankEl.innerHTML = '';
-  const sorted = [...students].sort((a, b) => getVolunteerHours(b) - getVolunteerHours(a));
-  sorted.forEach((s, idx) => {
-    if (getVolunteerHours(s) <= 0) return;
-    rankEl.innerHTML += `
-      <li class="rank-item">
-        <div class="rank-num">${idx + 1}</div>
-        <div class="rank-name">${s.name} <span style="font-size:12px;color:#999;">${s.student_no}</span></div>
-        <div class="rank-hours">${getVolunteerHours(s)} 小时</div>
-      </li>
-    `;
-  });
-}
-
-/* ============================================================
- * 交互逻辑
- * ============================================================ */
-document.querySelectorAll('.close').forEach(btn => btn.onclick = () => document.getElementById('modal').style.display = 'none');
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.onclick = () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(btn.dataset.tab).classList.add('active');
-  };
-});
-
-document.getElementById('addStudentBtn').onclick = async () => {
-  const no = document.getElementById('studentNo').value.trim();
-  const name = document.getElementById('studentName').value.trim();
-  const gender = document.getElementById('studentGender').value;
-  if (!no || !name) return alert('学号和姓名必填');
-  await sb.from('students').insert({ student_no: no, name, gender, volunteer_hours: 0 });
-  document.getElementById('studentNo').value = '';
-  document.getElementById('studentName').value = '';
-  loadData();
-};
-
-function openPointsModal(studentId, type) {
-  const s = students.find(x => x.id === studentId);
-  let html = `<p style="margin-bottom:15px;font-weight:bold;">学生：${s.name}</p><div class="rules-options">`;
-  const filtered = rules.filter(r => type === 'add' ? r.points > 0 : r.points < 0);
-  if (!filtered.length) html += `<p>暂无对应规则，请在数据库添加</p>`;
-  filtered.forEach(r => {
-    html += `<div class="rule-option" onclick="applyPoints('${s.id}', ${r.points}, '${r.name}')"><span>${r.name}</span><span>${r.points}</span></div>`;
-  });
-  html += `</div>`;
-  document.getElementById('modalTitle').textContent = type === 'add' ? '加分' : '减分';
-  document.getElementById('modalContent').innerHTML = html;
-  document.getElementById('modal').style.display = 'block';
-}
-
-async function applyPoints(studentId, points, reason) {
-  const s = students.find(x => x.id === studentId);
-  // 留痕：写入 history 表，带上 operator_name
-  await sb.from('history').insert({
-    student_id: s.id, semester: '2025-2026-1', points, reason,
-    operator_id: currentUser.id, operator_name: operatorName
-  });
-  document.getElementById('modal').style.display = 'none';
-  alert('操作成功，已留痕！');
-}
-
-function openVolunteerModal(studentId) {
-  const s = students.find(x => x.id === studentId);
-  document.getElementById('modalTitle').textContent = '添加志愿时长';
-  document.getElementById('modalContent').innerHTML = `
-    <p style="margin-bottom:10px;">学生：<b>${s.name}</b>（当前 ${getVolunteerHours(s)} 小时）</p>
-    <div class="form-group"><input type="number" id="volHours" class="form-control" placeholder="增加的小时数（支持小数）" step="0.5" min="0.5"></div>
-    <div class="form-group"><input type="text" id="volReason" class="form-control" placeholder="备注（如：迎新志愿）"></div>
-    <button class="btn btn-primary" style="width:100%" onclick="applyVolunteer('${s.id}')">确认添加</button>
-  `;
-  document.getElementById('modal').style.display = 'block';
-}
-
-async function applyVolunteer(studentId) {
-  const addHours = parseFloat(document.getElementById('volHours').value);
-  const reason = document.getElementById('volReason').value.trim() || '志愿服务';
-  if (isNaN(addHours) || addHours <= 0) return alert('请输入有效的大于0的数字');
-  
-  const s = students.find(x => x.id === studentId);
-  const newHours = getVolunteerHours(s) + addHours;
-  
-  // 更新学生表里的总时长
-  await sb.from('students').update({ volunteer_hours: newHours }).eq('id', studentId);
-  
-  // 留痕：写入 history 表，记录时长和操作人
-  await sb.from('history').insert({
-    student_id: s.id, semester: '2025-2026-1', points: 0, 
-    reason: `[志愿时长] +${addHours}小时 - ${reason}`,
-    operator_id: currentUser.id, operator_name: operatorName
-  });
-
-  document.getElementById('modal').style.display = 'none';
-  loadData();
-}
-
-/* ============================================================
- * 批量导入 (Excel)
- * ============================================================ */
-document.getElementById('importExcelBtn').onclick = () => document.getElementById('excelFile').click();
-document.getElementById('excelFile').onchange = function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async function(evt) {
-    const data = new Uint8Array(evt.target.result);
-    const wb = XLSX.read(data, { type: 'array' });
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
-    if (rows.length < 2) return alert('表格内容为空');
-    
-    let count = 0;
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      if (!row || row.length < 2) continue;
-      const studentNo = String(row[0] || '').trim();
-      const pointChange = row[2] !== undefined && row[2] !== '' ? Number(row[2]) : null;
-      const volHours = row[3] !== undefined && row[3] !== '' ? Number(row[3]) : null;
-      const remark = String(row[4] || '批量导入').trim();
-
-      if (!studentNo) continue;
-      const student = students.find(s => s.student_no === studentNo);
-      if (!student) continue;
-
-      if (pointChange !== null && !isNaN(pointChange) && pointChange !== 0) {
-        await sb.from('history').insert({
-          student_id: student.id, semester: '2025-2026-1', points: pointChange, reason: remark,
-          operator_id: currentUser.id, operator_name: operatorName
-        });
-      }
-      if (volHours !== null && !isNaN(volHours) && volHours > 0) {
-        const newH = getVolunteerHours(student) + volHours;
-        await sb.from('students').update({ volunteer_hours: newH }).eq('id', student.id);
-        await sb.from('history').insert({
-          student_id: student.id, semester: '2025-2026-1', points: 0, reason: `[批量志愿] +${volHours}小时 - ${remark}`,
-          operator_id: currentUser.id, operator_name: operatorName
-        });
-      }
-      count++;
-    }
-    alert(`成功处理 ${count} 条数据！`);
-    loadData();
-  };
-  reader.readAsArrayBuffer(file);
-  e.target.value = '';
-};
-
-document.getElementById('exportDataBtn').onclick = () => {
-  const wb = XLSX.utils.book_new();
-  const rows = [['学号', '姓名', '志愿时长']];
-  students.forEach(s => rows.push([s.student_no, s.name, getVolunteerHours(s)]));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), '数据');
-  XLSX.writeFile(wb, `数据_${new Date().toISOString().slice(0,10)}.xlsx`);
-};
-
-/* ============================================================
- * 初始化
- * ============================================================ */
+// 监听登录状态
 sb.auth.onAuthStateChange((event, session) => {
   if (session) {
     currentUser = session.user;
-    isAnonymous = !!currentUser.is_anonymous;
-    operatorName = currentUser.user_metadata?.username || '未命名';
-    isAdmin = (currentUser.app_metadata?.role === 'admin') && !isAnonymous;
-    
+    operatorName = currentUser.user_metadata?.username || '管理员';
     document.body.classList.add('is-admin');
-    document.getElementById('userRoleText').textContent = `操作人：${operatorName}`;
+    document.getElementById('userName').innerText = `操作人：${operatorName}`;
     document.getElementById('loginBtn').classList.add('hidden');
     document.getElementById('logoutBtn').classList.remove('hidden');
     loadData();
   } else {
     document.body.classList.remove('is-admin');
-    document.getElementById('userRoleText').textContent = '访客（只读）';
+    document.getElementById('userName').innerText = '访客(只读)';
     document.getElementById('loginBtn').classList.remove('hidden');
     document.getElementById('logoutBtn').classList.add('hidden');
     loadData();
   }
 });
+
+// 加载所有数据
+async function loadData() {
+  const [stuRes, hisRes, ruleRes] = await Promise.all([
+    sb.from('students').select('*').order('student_no'),
+    sb.from('history').select('*'),
+    sb.from('rules').select('*')
+  ]);
+  students = stuRes.data || [];
+  history = hisRes.data || [];
+  rules = ruleRes.data || [];
+  render();
+}
+
+// 计算总分与志愿时长
+function getPoints(id) {
+  let p = 100;
+  history.filter(h => h.student_id === id).forEach(h => p += Number(h.points));
+  return p;
+}
+
+function getVol(s) { return Number(s.volunteer_hours) || 0; }
+
+// 渲染所有视图
+function render() {
+  // 1. 学生列表
+  const list = document.getElementById('studentList');
+  list.innerHTML = '';
+  students.forEach(s => {
+    list.innerHTML += `
+      <div class="item-card ${s.gender}">
+        <div style="font-weight:900;font-size:18px;">${s.name}</div>
+        <div style="font-size:12px;color:#888;">${s.student_no} · ${s.dorm_no||'无宿舍'}</div>
+        <div class="student-points">${getPoints(s.id).toFixed(1)} 分</div>
+        <div class="student-vol"><i class="fas fa-clock"></i> 志愿 ${getVol(s)} 小时</div>
+        <div class="admin-only" style="margin-top:10px;gap:5px;justify-content:center;">
+          <button class="btn btn-sm" onclick="openPointsModal('${s.id}')">加减分</button>
+          <button class="btn btn-sm btn-addvol" onclick="addVol('${s.id}')">加时长</button>
+        </div>
+        <button class="btn btn-sm btn-white" style="width:100%;margin-top:8px;" onclick="showHistory('${s.id}')">查看历史</button>
+      </div>
+    `;
+  });
+
+  // 2. 宿舍列表 (按宿舍号分组)
+  const dormMap = {};
+  students.forEach(s => {
+    if (!s.dorm_no) return;
+    if (!dormMap[s.dorm_no]) dormMap[s.dorm_no] = [];
+    dormMap[s.dorm_no].push(s);
+  });
+  
+  const dormList = document.getElementById('dormList');
+  dormList.innerHTML = '';
+  Object.keys(dormMap).sort().forEach(dormNo => {
+    const members = dormMap[dormNo];
+    const totalPts = members.reduce((sum, s) => sum + getPoints(s.id), 0);
+    dormList.innerHTML += `
+      <div class="item-card" onclick="openDormModal('${dormNo}')" style="border-left:6px solid var(--primary);cursor:pointer;">
+        <div class="dorm-title"><i class="fas fa-door-open"></i> ${dormNo} 宿舍</div>
+        <div style="font-size:13px;color:var(--text-light);margin-bottom:10px;">共 ${members.length} 人</div>
+        <div class="student-points" style="font-size:16px;">总分 ${totalPts.toFixed(1)}</div>
+        <div style="margin-top:10px;font-size:12px;color:var(--primary);">点击管理该宿舍 <i class="fas fa-arrow-right"></i></div>
+      </div>
+    `;
+  });
+
+  // 3. 志愿时长榜
+  const rank = document.getElementById('rankList');
+  rank.innerHTML = '';
+  const sorted = [...students].sort((a,b) => getVol(b) - getVol(a));
+  sorted.forEach((s, i) => {
+    if(getVol(s) > 0) {
+      rank.innerHTML += `
+        <li style="padding:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;">
+          <span style="font-weight:900;color:var(--primary);margin-right:15px;width:25px;">#${i+1}</span>
+          <span style="flex:1;font-weight:bold;">${s.name} (${s.student_no})</span>
+          <span style="color:#2E7D32;font-weight:900;">${getVol(s)} 小时</span>
+        </li>`;
+    }
+  });
+}
+
+/* ============================================================
+ * 交互与弹窗
+ * ============================================================ */
+function switchTab(t) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i===(t==='list'?0:t==='dorm'?1:2)));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + t).classList.add('active');
+}
+
+function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+// 添加学生
+async function addStudent() {
+  const no = document.getElementById('addNo').value.trim();
+  const name = document.getElementById('addName').value.trim();
+  const dorm = document.getElementById('addDorm').value.trim();
+  const gender = document.getElementById('addGender').value;
+  if (!no || !name) return alert('学号和姓名必填');
+  await sb.from('students').insert({ student_no: no, name, gender, dorm_no: dorm, volunteer_hours: 0 });
+  document.getElementById('addNo').value = '';
+  document.getElementById('addName').value = '';
+  document.getElementById('addDorm').value = '';
+  loadData();
+}
+
+// 个人加减分弹窗
+function openPointsModal(studentId) {
+  const s = students.find(x => x.id === studentId);
+  let html = `
+    <div class="modal-header">
+      <h3>${s.name} - 加减分</h3>
+      <span class="close" onclick="closeModal()">&times;</span>
+    </div>
+    <p style="margin-bottom:10px;font-weight:bold;">选择快捷规则：</p>
+    <div class="rule-options">`;
+  rules.forEach(r => {
+    html += `<div class="rule-option" onclick="batchApplyPoints(['${s.id}'], ${r.points}, '${r.name}')"><span>${r.name}</span><span style="font-weight:bold;color:${r.points>0?'var(--primary)':'#E91E63'}">${r.points>0?'+':''}${r.points}</span></div>`;
+  });
+  html += `</div>
+    <div style="display:flex;gap:10px;margin-top:15px;">
+      <input type="number" id="customPts" class="form-control" placeholder="自定义分数(正数加分/负数减分)">
+      <button class="btn" onclick="applyCustomPoint(['${s.id}'])">应用</button>
+    </div>
+  `;
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modal').style.display = 'block';
+}
+
+// 宿舍管理弹窗（核心改动点）
+function openDormModal(dormNo) {
+  const members = students.filter(s => s.dorm_no === dormNo);
+  
+  let html = `
+    <div class="modal-header">
+      <h3>${dormNo} 宿舍 - 成员管理</h3>
+      <span class="close" onclick="closeModal()">&times;</span>
+    </div>
+    <div style="margin-bottom:15px;display:flex;align-items:center;gap:10px;">
+      <input type="checkbox" id="selectAllDorm" style="width:18px;height:18px;cursor:pointer;" onchange="toggleDormMembers(this)">
+      <label for="selectAllDorm" style="font-weight:bold;cursor:pointer;">全选 / 取消全选</label>
+    </div>
+    <div class="member-list">
+  `;
+  
+  members.forEach(s => {
+    html += `
+      <label class="member-item">
+        <input type="checkbox" class="dorm-member-cb" value="${s.id}" checked>
+        <span style="flex:1;font-weight:bold;">${s.name} <span style="font-size:12px;color:#888;">(${s.student_no})</span></span>
+        <span style="color:var(--primary);font-weight:900;">${getPoints(s.id).toFixed(1)}分</span>
+      </label>
+    `;
+  });
+  
+  html += `</div>
+    <div class="admin-only-block" style="display:block;">
+      <p style="margin-bottom:10px;font-weight:bold;">对选中成员批量加分/扣分：</p>
+      <div class="rule-options">`;
+  rules.forEach(r => {
+    html += `<div class="rule-option" onclick="applyDormPoints(${r.points}, '${r.name}')"><span>${r.name}</span><span style="font-weight:bold;color:${r.points>0?'var(--primary)':'#E91E63'}">${r.points>0?'+':''}${r.points}</span></div>`;
+  });
+  html += `</div>
+    <div style="display:flex;gap:10px;margin-top:15px;">
+      <input type="number" id="dormCustomPts" class="form-control" placeholder="自定义分数(如 2 或 -1)">
+      <button class="btn" onclick="applyDormCustomPoints()">应用</button>
+    </div>
+  </div>`;
+  
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modal').style.display = 'block';
+}
+
+// 全选/取消全选宿舍成员
+function toggleDormMembers(el) {
+  document.querySelectorAll('.dorm-member-cb').forEach(cb => cb.checked = el.checked);
+}
+
+// 提交批量加分逻辑
+async function batchApplyPoints(studentIds, points, reason) {
+  const inserts = studentIds.map(id => ({
+    student_id: id, semester: '2025-2026-1', points: points, reason: reason,
+    operator_id: currentUser.id, operator_name: operatorName
+  }));
+  await sb.from('history').insert(inserts);
+  closeModal();
+  loadData();
+  alert(`已成功为 ${studentIds.length} 名同学操作！`);
+}
+
+// 宿舍自定义分数加分
+function applyDormCustomPoints() {
+  const pts = parseFloat(document.getElementById('dormCustomPts').value);
+  if (isNaN(pts) || pts === 0) return alert('请输入有效分数');
+  
+  const selected = Array.from(document.querySelectorAll('.dorm-member-cb:checked')).map(cb => cb.value);
+  if (selected.length === 0) return alert('请至少勾选一名宿舍成员');
+  
+  batchApplyPoints(selected, pts, '宿舍自定义操作');
+}
+
+// 宿舍选规则加分
+function applyDormPoints(points, reason) {
+  const selected = Array.from(document.querySelectorAll('.dorm-member-cb:checked')).map(cb => cb.value);
+  if (selected.length === 0) return alert('请至少勾选一名宿舍成员');
+  batchApplyPoints(selected, points, reason);
+}
+
+// 个人自定义分数
+function applyCustomPoint(ids) {
+  const pts = parseFloat(document.getElementById('customPts').value);
+  if (isNaN(pts) || pts === 0) return alert('请输入有效分数');
+  batchApplyPoints(ids, pts, '自定义操作');
+}
+
+// 加志愿时长
+function addVol(id) {
+  const hours = prompt('请输入增加的志愿时长（小时，支持小数）：');
+  if(!hours || isNaN(hours) || hours <= 0) return;
+  const reason = prompt('请输入备注（如：迎新志愿）：') || '志愿活动';
+  
+  const s = students.find(x => x.id === id);
+  const newVol = getVol(s) + Number(hours);
+  
+  sb.from('students').update({ volunteer_hours: newVol }).eq('id', id).then(() => {
+    sb.from('history').insert({
+      student_id: id, semester: '2025-2026-1', points: 0, reason: `[志愿] +${hours}小时 - ${reason}`,
+      operator_id: currentUser.id, operator_name: operatorName
+    }).then(() => loadData());
+  });
+}
+
+// 查看历史
+function showHistory(id) {
+  const s = students.find(x => x.id === id);
+  const hList = history.filter(h => h.student_id === id).sort((a,b) => new Date(b.created_at||Date.now()) - new Date(a.created_at||Date.now()));
+  let html = `<div class="modal-header"><h3>${s.name} 的记录</h3><span class="close" onclick="closeModal()">&times;</span></div>
+    <ul style="list-style:none; max-height:400px; overflow-y:auto;">`;
+  if (hList.length === 0) html += '<p style="color:#888;text-align:center;">暂无记录</p>';
+  hList.forEach(h => {
+    html += `<li style="padding:10px 0;border-bottom:1px dashed #eee;font-size:14px;">
+      <span style="color:#888;font-size:12px;">${new Date(h.created_at).toLocaleString()}</span><br>
+      ${h.reason} <span style="float:right;font-weight:bold;color:${h.points>0?'var(--primary)':'#E91E63'}">${h.points>0?'+':''}${h.points}分</span><br>
+      <span style="font-size:12px;color:#aaa;">操作人：${h.operator_name||'未知'}</span>
+    </li>`;
+  });
+  html += '</ul>';
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modal').style.display = 'block';
+}
+
+/* ============================================================
+ * 登录、批量导入与初始化
+ * ============================================================ */
+document.getElementById('loginBtn').onclick = () => {
+  const u = prompt('请输入用户名(拼音)：');
+  if(!u) return;
+  const p = prompt('请输入密码(至少6位)：');
+  if(!p) return;
+  const email = `${u.toLowerCase()}@jewelry-points.local`;
+  sb.auth.signInWithPassword({ email, password: p }).then(({error}) => {
+    if(error) {
+      if(confirm('登录失败，是否尝试注册该账号？')) {
+        sb.auth.signUp({ email, password: p, options: { data: { username: u } } }).then(({error}) => {
+          if(error) alert('注册失败：'+error.message);
+          else alert('注册成功，已自动登录！(如需管理员权限请去后台提权)');
+        });
+      }
+    }
+  });
+};
+document.getElementById('logoutBtn').onclick = () => { sb.auth.signOut(); };
+
+// 批量导入
+document.getElementById('importBtn').onclick = () => document.getElementById('fileInput').click();
+document.getElementById('fileInput').onchange = e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async evt => {
+    const wb = XLSX.read(new Uint8Array(evt.target.result), {type:'array'});
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
+    let count = 0;
+    for(let i=1; i<rows.length; i++) {
+      const r = rows[i];
+      if(!r || !r[0]) continue;
+      const s = students.find(x => x.student_no === String(r[0]).trim());
+      if(!s) continue;
+      
+      const pt = r[2] ? Number(r[2]) : 0;
+      const vol = r[3] ? Number(r[3]) : 0;
+      const remark = r[4] || '批量导入';
+
+      if(pt !== 0) {
+        await sb.from('history').insert({student_id:s.id, semester:'2025-2026-1', points:pt, reason:remark, operator_id:currentUser.id, operator_name:operatorName});
+      }
+      if(vol > 0) {
+        const newVol = getVol(s) + vol;
+        await sb.from('students').update({volunteer_hours: newVol}).eq('id', s.id);
+        await sb.from('history').insert({student_id:s.id, semester:'2025-2026-1', points:0, reason:`[志愿] +${vol}小时`, operator_id:currentUser.id, operator_name:operatorName});
+      }
+      count++;
+    }
+    alert(`成功处理 ${count} 人！`);
+    loadData();
+  };
+  reader.readAsArrayBuffer(file);
+};
 </script>
 </body>
 </html>
