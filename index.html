@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>珠宝学院综合积分管理系统 · 联网版</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net.cn/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <style>
@@ -425,9 +424,8 @@ h1, h2, h3, h4 { font-family: 'Quicksand', 'Noto Sans SC', sans-serif; font-weig
 /* ============================================================
  * ★ 1. Supabase 配置
  * ============================================================ */
-const SUPABASE_URL = 'https://yjexkrbxgzqusoojxbke.supabase.co'; // ★ 填入你的 URL
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqZXhrcmJ4Z3pxdXNvb2p4YmtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2MjA2MDAsImV4cCI6MjEwODE5NjYwMH0.-loqPcHO_CSJLCt1f1ZFPWCzEqBNABTOwVcN5yRnCdA
-'; // ★ 填入你的 Key
+const SUPABASE_URL = 'https://yjexkrbxgzqusoojxbke.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqZXhrcmJ4Z3pxdXNvb2p4YmtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2MjA2MDAsImV4cCI6MjEwODE5NjYwMH0.-loqPcHO_CSJLCt1f1ZFPWCzEqBNABTOwVcN5yRnCdA';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ============================================================
