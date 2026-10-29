@@ -1,10 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>珠宝学院综合积分管理系统</title>
-<!-- 移除了国内打不开的 Google 字体，加快加载速度 -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net.cn/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
@@ -180,6 +179,8 @@ h1, h2, h3, h4 { font-family: 'Quicksand', 'Noto Sans SC', sans-serif; font-weig
 .text-center { text-align: center; }
 .mb-1 { margin-bottom: 8px; } .mb-2 { margin-bottom: 15px; } .mt-1 { margin-top: 8px; } .mt-2 { margin-top: 15px; }
 .d-flex { display: flex; } .gap-2 { gap: 8px; }
+
+/* ★ 核心权限控制：默认隐藏，只有加上了 is-admin 类才显示 */
 .admin-only { display: none !important; }
 body.is-admin .admin-only { display: inline-flex !important; }
 body.is-admin .admin-only-block { display: block !important; }
@@ -207,7 +208,7 @@ body.is-admin .admin-only-block { display: block !important; }
       <span>珠宝学院综合积分管理系统</span>
     </div>
     <div class="header-controls">
-      <div class="class-selector-wrapper" style="background:var(--primary-light);color:#fff;">
+      <div class="class-selector-wrapper" style="background:var(--primary);color:#fff;">
         <label style="color:#fff;"><i class="fas fa-user-circle"></i> <span id="currentUserName">未登录</span></label>
         <button id="loginBtn" class="btn btn-sm btn-white" style="margin-left:10px;padding:2px 8px;">登录</button>
         <button id="logoutBtn" class="btn btn-sm btn-white hidden" style="margin-left:10px;padding:2px 8px;">退出</button>
@@ -220,7 +221,6 @@ body.is-admin .admin-only-block { display: block !important; }
       <div class="class-selector-wrapper">
         <label><i class="fas fa-calendar-alt"></i> 学期：</label>
         <select id="semesterSelector"></select>
-        <button id="addSemesterBtn" class="btn-icon-mini btn-primary admin-only" title="新建学期"><i class="fas fa-plus"></i></button>
       </div>
       <button id="timerBtn" class="btn btn-accent2"><i class="fas fa-stopwatch"></i> 计时</button>
       <button id="themeToggle" class="btn btn-accent1"><i class="fas fa-palette"></i> 主题</button>
@@ -280,9 +280,7 @@ body.is-admin .admin-only-block { display: block !important; }
           <div class="card-body">
             <div class="mb-2" style="display:flex; gap:10px; align-items:center;">
               <label style="font-weight:bold; white-space:nowrap;">选择班级：</label>
-              <select id="volClassSelector" class="form-control" multiple style="height: 80px;">
-                <!-- 动态填充 -->
-              </select>
+              <select id="volClassSelector" class="form-control" multiple style="height: 80px;"></select>
               <span style="font-size:12px;color:var(--text-light);">按住 Ctrl 可多选，默认全部</span>
             </div>
             <p class="mb-2" style="font-size:13px;color:var(--text-light);">按当前学期（<span id="volSemesterText"></span>）独立统计，不参与综合积分折算。</p>
@@ -304,7 +302,7 @@ body.is-admin .admin-only-block { display: block !important; }
       <!-- 体测管理 -->
       <div id="fitness" class="tab-content">
         <div class="card">
-          <div class="card-header"><h2 class="card-title"><i class="fas fa-heartbeat"></i> 体测成绩管理（按学年）</h2></div>
+          <div class="card-header"><h2 class="card-title"><i class="fas fa-heartbeat"></i> 体测成绩管理</h2></div>
           <div class="card-body">
             <div class="fitness-toolbar">
               <label>体测学年：</label>
@@ -312,7 +310,7 @@ body.is-admin .admin-only-block { display: block !important; }
               <label style="margin-left:10px;">折算比例：</label>
               <input type="number" id="fitnessPercentInput" min="0" max="100" step="0.1" value="20" style="width:70px;">
               <span>%</span>
-              <button id="saveFitnessPercentBtn" class="btn btn-sm btn-primary">保存</button>
+              <button id="saveFitnessPercentBtn" class="btn btn-sm btn-primary admin-only">保存</button>
             </div>
             <div class="fitness-toolbar admin-only">
               <button id="importFitnessBtn" class="btn btn-sm btn-primary"><i class="fas fa-file-import"></i> 导入成绩</button>
@@ -394,7 +392,7 @@ body.is-admin .admin-only-block { display: block !important; }
 
 <script>
 /* ============================================================
- * ★ 已直接写入你的 Supabase 配置
+ * Supabase 配置
  * ============================================================ */
 const SUPABASE_URL = 'https://yjexkrbxgzqusoojxbke.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqZXhrcmJ4Z3pxdXNvb2p4YmtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2MjA2MDAsImV4cCI6MjEwODE5NjYwMH0.-loqPcHO_CSJLCt1f1ZFPWCzEqBNABTOwVcN5yRnCdA';
@@ -408,16 +406,15 @@ let operatorName = '未登录';
 let isAdmin = false;
 
 let classes = [];
-let allStudents = []; // 云端所有学生
-let students = [];    // 当前班级学生
-let historyData = []; // 当前学期所有记录
-let fitnessData = []; // 当前班级体测
+let allStudents = []; 
+let students = [];    
+let historyData = []; 
+let fitnessData = []; 
 let rules = [];
 
 let currentClassName = '';
 let currentClassId = '';
 let currentSemester = '2025-2026-1';
-let semesters = ['2025-2026-1'];
 let currentAcademicYear = '2025-2026';
 let fitnessPercent = 20;
 let currentThemeIndex = 1;
@@ -427,7 +424,7 @@ const BASE_POINTS = 100;
 const FITNESS_ZERO_THRESHOLD = 60;
 
 /* ============================================================
- * 登录逻辑
+ * 登录逻辑（严格权限控制）
  * ============================================================ */
 document.getElementById('loginBtn').onclick = () => {
   showModal('登录 / 注册', `
@@ -451,7 +448,7 @@ async function doAuth(mode) {
     if (mode === 'register') {
       const { data, error } = await sb.auth.signUp({ email, password: p, options: { data: { username: u } } });
       if (error) throw error;
-      alert('注册成功，请点击登录。'); closeModal();
+      alert('注册成功，请点击登录。普通用户只能看，不能修改。\n如需修改权限，请联系超级管理员在后台设置。'); closeModal();
     } else {
       const { error } = await sb.auth.signInWithPassword({ email, password: p });
       if (error) throw error;
@@ -466,17 +463,28 @@ sb.auth.onAuthStateChange((event, session) => {
   if (session) {
     currentUser = session.user;
     operatorName = currentUser.user_metadata?.username || '未知用户';
-    isAdmin = true;
-    document.body.classList.add('is-admin');
-    document.getElementById('currentUserName').textContent = `操作人：${operatorName}`;
+    
+    // ★ 严格判断权限：必须是 admin 标签
+    isAdmin = (currentUser.app_metadata?.role === 'admin');
+    
+    if (isAdmin) {
+      document.body.classList.add('is-admin');
+      document.getElementById('currentUserName').textContent = `操作人：${operatorName} (管理员)`;
+    } else {
+      document.body.classList.remove('is-admin');
+      document.getElementById('currentUserName').textContent = `操作人：${operatorName} (只读)`;
+    }
+    
     document.getElementById('loginBtn').classList.add('hidden');
     document.getElementById('logoutBtn').classList.remove('hidden');
+    document.getElementById('appContainer').style.display = 'block';
   } else {
     currentUser = null; operatorName = '未登录'; isAdmin = false;
     document.body.classList.remove('is-admin');
-    document.getElementById('currentUserName').textContent = '未登录';
+    document.getElementById('currentUserName').textContent = '未登录（只读）';
     document.getElementById('loginBtn').classList.remove('hidden');
     document.getElementById('logoutBtn').classList.add('hidden');
+    document.getElementById('appContainer').style.display = 'block';
   }
   loadData();
 });
@@ -512,7 +520,7 @@ async function loadData() {
 }
 
 /* ============================================================
- * 计算与渲染逻辑
+ * 计算与渲染
  * ============================================================ */
 function getStudentHistory(studentId) {
   return historyData.filter(h => h.student_id === studentId);
@@ -543,13 +551,15 @@ function updateUI() {
   renderClassSelector();
   document.getElementById('volSemesterText').textContent = currentSemester;
 
-  // 渲染学生卡片
+  // 学生卡片
   const el = document.getElementById('allStudents');
   el.innerHTML = '';
   students.forEach(s => {
     const total = getTotalPoints(s);
     const vol = getVolunteerHours(s.id);
     const warn = total < WARNING_THRESHOLD;
+    
+    // 注意这里的 admin-only，由于没有管理员权限，body 上不会有 is-admin，所以控制按钮不会渲染出样式
     el.innerHTML += `
       <div class="student-card ${s.gender} ${warn?'has-warning':''}" onclick="showHistoryModal('${s.id}')">
         <div class="student-card-inner">
@@ -572,7 +582,7 @@ function updateUI() {
     `;
   });
 
-  // 渲染志愿榜 (支持多选)
+  // 志愿榜
   const vSel = document.getElementById('volClassSelector');
   if (vSel.options.length === 0) {
     classes.forEach(c => { vSel.innerHTML += `<option value="${c.id}" selected>${c.name}</option>`; });
@@ -580,7 +590,7 @@ function updateUI() {
   }
   renderVolunteerList();
 
-  // 渲染宿舍
+  // 宿舍
   const dEl = document.getElementById('dormsArea');
   dEl.innerHTML = '';
   const dormMap = {};
@@ -596,7 +606,7 @@ function updateUI() {
     `;
   });
 
-  // 渲染综合排行
+  // 综合排行
   const lEl = document.getElementById('studentLeaderboardList');
   lEl.innerHTML = '';
   [...students].sort((a, b) => getTotalPoints(b) - getTotalPoints(a)).forEach((s, i) => {
@@ -610,7 +620,7 @@ function updateUI() {
     `;
   });
 
-  // 渲染规则
+  // 规则
   const rEl = document.getElementById('rulesList');
   rEl.innerHTML = '';
   rules.forEach(r => {
@@ -661,10 +671,10 @@ function renderClassSelector() {
 }
 
 /* ============================================================
- * 操作逻辑：加减分、志愿、撤回
+ * 操作逻辑（函数内部也加了拦截）
  * ============================================================ */
 function showPointsModal(id, type) {
-  if (!currentUser) return alert('请先登录');
+  if (!isAdmin) return alert('只有管理员才能操作');
   const s = students.find(x => x.id === id);
   let html = `<p style="margin-bottom:15px;font-weight:bold;">学生：${s.name}</p><div class="rules-options">`;
   rules.filter(r => type==='add' ? r.points>0 : r.points<0).forEach(r => {
@@ -678,11 +688,13 @@ function showPointsModal(id, type) {
 }
 
 async function applyPoints(studentId, points, reason) {
+  if (!isAdmin) return;
   await sb.from('history').insert({ student_id: studentId, semester: currentSemester, points: points, reason: reason, operator_name: operatorName });
   closeModal(); loadData();
 }
 
 async function applyCustomPoints(studentId, type) {
+  if (!isAdmin) return;
   let pts = parseInt(document.getElementById('customPts').value);
   const reason = document.getElementById('customReason').value.trim() || '自定义';
   if (isNaN(pts)) return alert('请输入分数');
@@ -692,7 +704,7 @@ async function applyCustomPoints(studentId, type) {
 }
 
 function showVolunteerModal(id) {
-  if (!currentUser) return alert('请先登录');
+  if (!isAdmin) return alert('只有管理员才能操作');
   const s = students.find(x => x.id === id);
   showModal(`添加志愿时长：${s.name}`, `
     <p style="margin-bottom:10px;">当前时长：<b>${getVolunteerHours(s.id)}</b> 小时</p>
@@ -704,6 +716,7 @@ function showVolunteerModal(id) {
 }
 
 async function applyVolunteer(id) {
+  if (!isAdmin) return;
   const h = parseFloat(document.getElementById('volHours').value);
   const r = document.getElementById('volReason').value.trim() || '志愿服务';
   if (isNaN(h) || h <= 0) return alert('请输入有效时长');
@@ -743,10 +756,8 @@ function showHistoryModal(id) {
 }
 
 async function revertHistory(recordId) {
+  if (!isAdmin) return;
   if (!confirm('确定要撤回这条操作吗？撤回后将保留记录但不再计入总分。')) return;
-  await sb.from('history').update({ is_reverted: true, reason: sb.raw("reason || ' [已被撤回]'") }).eq('id', recordId);
-  // 注意：Supabase 的更新比较麻烦，这里为了简单，直接改为 is_reverted 为 true
-  // 为了不增加难度，上面这句 sb.raw 可能报错，改用简单方式：
   closeModal();
   await sb.from('history').update({ is_reverted: true }).eq('id', recordId);
   loadData();
@@ -761,17 +772,20 @@ function showDormDetailModal(dormNo) {
   let html = '<table style="width:100%;text-align:left;border-collapse:collapse;"><tr><th>姓名</th><th>分数</th><th>操作</th></tr>';
   list.forEach(s => {
     html += `<tr style="border-bottom:1px solid #eee;"><td style="padding:8px 0;">${s.name}</td><td>${getTotalPoints(s).toFixed(1)}</td>
-      <td><button class="btn btn-sm btn-primary" onclick="showPointsModal('${s.id}','add')">+</button>
-      <button class="btn btn-sm btn-danger" onclick="showPointsModal('${s.id}','sub')">-</button></td></tr>`;
+      <td>
+        <button class="btn btn-sm btn-primary admin-only" onclick="showPointsModal('${s.id}','add')">+</button>
+        <button class="btn btn-sm btn-danger admin-only" onclick="showPointsModal('${s.id}','sub')">-</button>
+      </td></tr>`;
   });
   html += '</table>';
-  html += `<div style="margin-top:15px;text-align:center;">
+  html += `<div style="margin-top:15px;text-align:center;" class="admin-only-block">
     <button class="btn btn-accent1" onclick="showDormBatchModal('${dormNo}')" style="width:100%;"><i class="fas fa-users-cog"></i> 一键给全宿舍加减分</button>
   </div>`;
   showModal(`${dormNo} 宿舍详情`, html);
 }
 
 function showDormBatchModal(dormNo) {
+  if (!isAdmin) return;
   let html = `<p>为该宿舍全体成员统一加分/扣分：</p><div class="rules-options">`;
   rules.forEach(r => {
     html += `<div class="rule-option" onclick="applyDormBatch('${dormNo}', ${r.points}, '${r.name}')"><span>${r.name}</span><span>${r.points}</span></div>`;
@@ -781,6 +795,7 @@ function showDormBatchModal(dormNo) {
 }
 
 async function applyDormBatch(dormNo, points, reason) {
+  if (!isAdmin) return;
   const list = students.filter(s => s.dorm_no === dormNo);
   const inserts = list.map(s => ({
     student_id: s.id, semester: currentSemester, points: points, reason: `[宿舍] ${reason}`, operator_name: operatorName
@@ -791,12 +806,11 @@ async function applyDormBatch(dormNo, points, reason) {
 }
 
 /* ============================================================
- * 导入功能 (学生/规则/体测/志愿)
+ * 导入功能
  * ============================================================ */
-// 导入志愿时长
 document.getElementById('importVolunteerBtn').onclick = () => document.getElementById('importVolunteerFile').click();
 document.getElementById('importVolunteerFile').onchange = function(e) {
-  if (!currentUser) return alert('请先登录');
+  if (!isAdmin) return alert('只有管理员才能操作');
   const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = async evt => {
@@ -822,10 +836,9 @@ document.getElementById('importVolunteerFile').onchange = function(e) {
   reader.readAsArrayBuffer(file); e.target.value = '';
 };
 
-// 导入学生
 document.getElementById('importStudentsBtn').onclick = () => document.getElementById('importStudentsFile').click();
 document.getElementById('importStudentsFile').onchange = function(e) {
-  if (!currentUser) return alert('请先登录');
+  if (!isAdmin) return alert('只有管理员才能操作');
   const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = async evt => {
@@ -835,7 +848,6 @@ document.getElementById('importStudentsFile').onchange = function(e) {
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i];
       if (!r || !r[0]) continue;
-      // 假设格式：班级、学号、姓名、性别、宿舍
       const cName = String(r[0]||'').trim() || currentClassName;
       const no = String(r[1]||'').trim(); const name = String(r[2]||'').trim();
       if(!no || !name) continue;
@@ -856,10 +868,9 @@ document.getElementById('importStudentsFile').onchange = function(e) {
   reader.readAsArrayBuffer(file); e.target.value = '';
 };
 
-// 导入规则
 document.getElementById('importRulesBtn').onclick = () => document.getElementById('importRulesFile').click();
 document.getElementById('importRulesFile').onchange = function(e) {
-  if (!currentUser) return alert('请先登录');
+  if (!isAdmin) return alert('只有管理员才能操作');
   const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = async evt => {
@@ -878,7 +889,7 @@ document.getElementById('importRulesFile').onchange = function(e) {
 };
 
 /* ============================================================
- * 体测功能
+ * 体测
  * ============================================================ */
 function renderFitnessUI() {
   document.getElementById('academicYearSelector').innerHTML = `<option>${currentAcademicYear}</option>`;
@@ -906,7 +917,7 @@ function renderFitnessUI() {
 
 document.getElementById('importFitnessBtn').onclick = () => document.getElementById('importFitnessFile').click();
 document.getElementById('importFitnessFile').onchange = function(e) {
-  if (!currentUser) return alert('请先登录');
+  if (!isAdmin) return alert('只有管理员才能操作');
   const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = async evt => {
@@ -930,13 +941,25 @@ document.getElementById('importFitnessFile').onchange = function(e) {
 };
 
 document.getElementById('saveFitnessPercentBtn').onclick = () => {
+  if (!isAdmin) return;
   fitnessPercent = parseFloat(document.getElementById('fitnessPercentInput').value) || 20;
   updateUI();
   alert('折算比例已保存');
 };
 
+document.getElementById('exportFitnessBtn').onclick = () => {
+  const rows = [['姓名','学号','体测成绩']];
+  students.forEach(s => {
+    const rec = fitnessData.find(f => f.student_id === s.id);
+    rows.push([s.name, s.student_no, rec ? rec.score : '']);
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), '体测');
+  XLSX.writeFile(wb, `体测成绩_${currentAcademicYear}.xlsx`);
+};
+
 /* ============================================================
- * 页面基本事件
+ * 杂项事件
  * ============================================================ */
 function showModal(title, html) {
   document.getElementById('modalTitle').textContent = title;
@@ -961,6 +984,7 @@ document.getElementById('themeToggle').onclick = () => {
 };
 
 document.getElementById('addStudentBtn').onclick = async () => {
+  if (!isAdmin) return alert('只有管理员才能操作');
   if(!currentClassId) return alert('请先选择班级');
   const no = document.getElementById('studentNo').value.trim();
   const name = document.getElementById('studentName').value.trim();
@@ -975,13 +999,68 @@ document.getElementById('addStudentBtn').onclick = async () => {
 };
 
 document.getElementById('addClassBtn').onclick = async () => {
+  if (!isAdmin) return;
   const n = prompt('新班级名称：');
   if(!n) return;
   await sb.from('classes').insert({ name: n });
   loadData();
 };
 
-// 初始化显示容器
+document.getElementById('addRuleBtn').onclick = async () => {
+  if (!isAdmin) return;
+  const n = document.getElementById('ruleName').value.trim();
+  const p = parseInt(document.getElementById('rulePoints').value);
+  if(!n || isNaN(p)) return alert('请填完整');
+  await sb.from('rules').insert({ name: n, points: p });
+  document.getElementById('ruleName').value = '';
+  document.getElementById('rulePoints').value = '';
+  loadData();
+};
+
+document.getElementById('exportDataBtn').onclick = () => {
+  const rows = [['班级', '学号', '姓名', '总分', '志愿时长']];
+  allStudents.forEach(s => {
+    rows.push([classes.find(c=>c.id===s.class_id)?.name || '', s.student_no, s.name, getTotalPoints(s), getVolunteerHours(s.id)]);
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), '汇总');
+  XLSX.writeFile(wb, `珠宝学院数据_${new Date().toISOString().slice(0,10)}.xlsx`);
+};
+
+document.getElementById('resetAllPoints').onclick = async () => {
+  if (!isAdmin) return;
+  if(!confirm('确定清空所有学生的加减分与志愿记录吗？此操作不可恢复！')) return;
+  await sb.from('history').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  loadData();
+};
+
+// 计时器简易实现
+let timerInterval = null;
+let stopwatchTime = 0;
+document.getElementById('startStopwatchBtn').onclick = function() {
+  if (timerInterval) {
+    clearInterval(timerInterval); timerInterval = null;
+    this.textContent = '继续';
+  } else {
+    const start = Date.now() - stopwatchTime;
+    timerInterval = setInterval(() => {
+      stopwatchTime = Date.now() - start;
+      const m = Math.floor(stopwatchTime/60000);
+      const s = Math.floor((stopwatchTime%60000)/1000);
+      const c = Math.floor((stopwatchTime%1000)/10);
+      document.getElementById('stopwatchDisplay').textContent = 
+        `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(c).padStart(2,'0')}`;
+    }, 10);
+    this.textContent = '暂停';
+  }
+};
+document.getElementById('resetStopwatchBtn').onclick = () => {
+  clearInterval(timerInterval); timerInterval = null; stopwatchTime = 0;
+  document.getElementById('stopwatchDisplay').textContent = '00:00.00';
+  document.getElementById('startStopwatchBtn').textContent = '开始';
+};
+document.getElementById('timerBtn').onclick = () => document.getElementById('timerModal').style.display = 'block';
+
 document.getElementById('appContainer').style.display = 'block';
 </script>
 </body>
