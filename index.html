@@ -820,17 +820,28 @@ document.getElementById('importVolunteerFile').onchange = function(e) {
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i];
       if (!r || !r[0]) continue;
-      const no = String(r[0]).trim(); const hours = parseFloat(r[1]);
+      
+      // 按照要求的四列读取：学号(0)、姓名(1)、志愿时长(2)、备注(3)
+      const no = String(r[0]).trim();
+      const hours = parseFloat(r[2]); // 时长在第三列
+      const remark = String(r[3] || '批量导入').trim(); // 备注在第四列
+
       if (isNaN(hours) || hours <= 0) continue;
-      const s = students.find(x => x.student_no === no);
+      
+      // ★ 核心修改：在全局学生（allStudents）中查找，不再限制当前班级
+      const s = allStudents.find(x => x.student_no === no);
       if (!s) continue;
       
       await sb.from('history').insert({
-        student_id: s.id, semester: currentSemester, volunteer_hours: hours, reason: '批量导入', operator_name: operatorName
+        student_id: s.id, 
+        semester: currentSemester, 
+        volunteer_hours: hours, 
+        reason: remark, 
+        operator_name: operatorName
       });
       count++;
     }
-    alert(`成功导入 ${count} 条志愿时长记录`);
+    alert(`成功导入 ${count} 条志愿时长记录（已自动跨越班级匹配）`);
     loadData();
   };
   reader.readAsArrayBuffer(file); e.target.value = '';
@@ -1006,7 +1017,49 @@ document.getElementById('addClassBtn').onclick = async () => {
   loadData();
 };
 
-document.getElementById('addRuleBtn').onclick = async () => {
+// ★ 新增：学生列表搜索功能
+document.getElementById('studentSearchInput').oninput = function() {
+  const keyword = this.value.trim().toLowerCase();
+  const el = document.getElementById('allStudents');
+  el.innerHTML = '';
+  
+  // 如果搜索框为空，显示当前班级所有人
+  const listToRender = keyword 
+    ? students.filter(s => s.name.toLowerCase().includes(keyword) || s.student_no.toLowerCase().includes(keyword))
+    : students;
+
+  if (listToRender.length === 0) {
+    el.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--text-light);">没有找到匹配的学生</p>';
+    return;
+  }
+
+  listToRender.forEach(s => {
+    const total = getTotalPoints(s);
+    const vol = getVolunteerHours(s.id);
+    const warn = total < WARNING_THRESHOLD;
+    el.innerHTML += `
+      <div class="student-card ${s.gender} ${warn?'has-warning':''}" onclick="showHistoryModal('${s.id}')">
+        <div class="student-card-inner">
+          <div class="student-avatar ${s.gender}">${s.name.charAt(0)}</div>
+          <div class="student-info">
+            <div class="student-name">${s.name} ${warn?'<i class="fas fa-exclamation-triangle warning-icon"></i>':''}</div>
+            <div class="student-meta">${s.student_no} ${s.dorm_no?'· '+s.dorm_no+'舍':''}</div>
+            <div class="student-points">
+              <div class="points-row"><span class="points-label">总分</span><span class="points-value" style="color:${warn?'#E91E63':''};">${total.toFixed(2)}</span></div>
+              <div class="points-row"><span class="points-label">志愿</span><span class="points-value" style="color:var(--accent2);">${vol} 小时</span></div>
+            </div>
+            <div class="student-controls admin-only">
+              <button class="btn btn-icon btn-primary" onclick="event.stopPropagation(); showPointsModal('${s.id}','add')" title="加分">+</button>
+              <button class="btn btn-icon btn-danger" onclick="event.stopPropagation(); showPointsModal('${s.id}','sub')" title="减分">-</button>
+              <button class="btn btn-icon btn-accent1" onclick="event.stopPropagation(); showVolunteerModal('${s.id}')" title="加时长"><i class="fas fa-clock"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+};
+  document.getElementById('addRuleBtn').onclick = async () => {
   if (!isAdmin) return;
   const n = document.getElementById('ruleName').value.trim();
   const p = parseInt(document.getElementById('rulePoints').value);
