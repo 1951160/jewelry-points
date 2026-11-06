@@ -1023,9 +1023,9 @@ document.getElementById('studentSearchInput').oninput = function() {
   const el = document.getElementById('allStudents');
   el.innerHTML = '';
   
-  // 如果搜索框为空，显示当前班级所有人
+  // ★ 修改：如果是搜索，就从全局 allStudents 里找；如果清空搜索，就恢复显示当前班级 students
   const listToRender = keyword 
-    ? students.filter(s => s.name.toLowerCase().includes(keyword) || s.student_no.toLowerCase().includes(keyword))
+    ? allStudents.filter(s => s.name.toLowerCase().includes(keyword) || s.student_no.toLowerCase().includes(keyword))
     : students;
 
   if (listToRender.length === 0) {
@@ -1037,13 +1037,16 @@ document.getElementById('studentSearchInput').oninput = function() {
     const total = getTotalPoints(s);
     const vol = getVolunteerHours(s.id);
     const warn = total < WARNING_THRESHOLD;
+    // ★ 补充：为了让用户知道搜出来的学生是哪个班的，加上班级名字
+    const className = classes.find(c => c.id === s.class_id)?.name || '';
+    
     el.innerHTML += `
       <div class="student-card ${s.gender} ${warn?'has-warning':''}" onclick="showHistoryModal('${s.id}')">
         <div class="student-card-inner">
           <div class="student-avatar ${s.gender}">${s.name.charAt(0)}</div>
           <div class="student-info">
             <div class="student-name">${s.name} ${warn?'<i class="fas fa-exclamation-triangle warning-icon"></i>':''}</div>
-            <div class="student-meta">${s.student_no} ${s.dorm_no?'· '+s.dorm_no+'舍':''}</div>
+            <div class="student-meta">${s.student_no} ${s.dorm_no?'· '+s.dorm_no+'舍':''} <span style="color:var(--primary);font-weight:bold;">[${className}]</span></div>
             <div class="student-points">
               <div class="points-row"><span class="points-label">总分</span><span class="points-value" style="color:${warn?'#E91E63':''};">${total.toFixed(2)}</span></div>
               <div class="points-row"><span class="points-label">志愿</span><span class="points-value" style="color:var(--accent2);">${vol} 小时</span></div>
