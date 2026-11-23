@@ -184,6 +184,8 @@ h1, h2, h3, h4 { font-family: 'Quicksand', 'Noto Sans SC', sans-serif; font-weig
 .admin-only { display: none !important; }
 body.is-admin .admin-only { display: inline-flex !important; }
 body.is-admin .admin-only-block { display: block !important; }
+.super-admin-only { display: none !important; }
+body.is-super-admin .super-admin-only { display: inline-flex !important; }
 </style>
 </head>
 <body class="theme-vibrant">
@@ -217,10 +219,12 @@ body.is-admin .admin-only-block { display: block !important; }
         <label><i class="fas fa-school"></i> 班级：</label>
         <select id="classSelector"></select>
         <button id="addClassBtn" class="btn-icon-mini btn-primary admin-only" title="新建班级"><i class="fas fa-plus"></i></button>
+        <button id="deleteClassBtn" class="btn-icon-mini btn-danger super-admin-only" title="删除当前班级"><i class="fas fa-trash"></i></button>
       </div>
       <div class="class-selector-wrapper">
         <label><i class="fas fa-calendar-alt"></i> 学期：</label>
         <select id="semesterSelector"></select>
+        <button id="addSemesterBtn" class="btn-icon-mini btn-primary super-admin-only" title="新建学期"><i class="fas fa-plus"></i></button>
       </div>
       <button id="timerBtn" class="btn btn-accent2"><i class="fas fa-stopwatch"></i> 计时</button>
       <button id="themeToggle" class="btn btn-accent1"><i class="fas fa-palette"></i> 主题</button>
@@ -413,9 +417,12 @@ let rules = [];
 
 let currentClassName = '';
 let currentClassId = '';
-// ★ 修改3：默认学期已改
-let currentSemester = '2026-2027-1'; 
-let currentAcademicYear = '2026-2027';
+
+// ★ 动态学期变量
+let semesterList = JSON.parse(localStorage.getItem('semesterList') || '["2025-2026-1", "2026-2027-1"]');
+let currentSemester = localStorage.getItem('currentSemester') || semesterList[semesterList.length - 1];
+let currentAcademicYear = currentSemester.split('-')[0] + '-' + currentSemester.split('-')[1];
+
 let fitnessPercent = 20;
 let currentThemeIndex = 1;
 const themes = ['theme-vibrant', 'theme-pastel'];
@@ -465,9 +472,17 @@ sb.auth.onAuthStateChange((event, session) => {
     operatorName = currentUser.user_metadata?.username || '未知用户';
     isAdmin = (currentUser.app_metadata?.role === 'admin');
     
+    // ★ 新增：判断是否是超级管理员（名字必须叫 zhengtao）
+    const isSuperAdmin = (operatorName === 'zhengtao'); 
+    if (isSuperAdmin) {
+      document.body.classList.add('is-super-admin');
+    } else {
+      document.body.classList.remove('is-super-admin');
+    }
+    
     if (isAdmin) {
       document.body.classList.add('is-admin');
-      document.getElementById('currentUserName').textContent = `操作人：${operatorName} (管理员)`;
+      document.getElementById('currentUserName').textContent = `操作人：${operatorName} ${isSuperAdmin ? '(超管)' : '(管理员)'}`;
     } else {
       document.body.classList.remove('is-admin');
       document.getElementById('currentUserName').textContent = `操作人：${operatorName} (只读)`;
@@ -479,6 +494,7 @@ sb.auth.onAuthStateChange((event, session) => {
   } else {
     currentUser = null; operatorName = '未登录'; isAdmin = false;
     document.body.classList.remove('is-admin');
+    document.body.classList.remove('is-super-admin');
     document.getElementById('currentUserName').textContent = '未登录（只读）';
     document.getElementById('loginBtn').classList.remove('hidden');
     document.getElementById('logoutBtn').classList.add('hidden');
@@ -665,13 +681,22 @@ function renderClassSelector() {
     currentClassName = e.target.options[e.target.selectedIndex].text;
     loadData();
   };
-  document.getElementById('semesterSelector').innerHTML = `<option>${currentSemester}</option>`;
+  
+  // ★ 动态学期渲染
+  const sSel = document.getElementById('semesterSelector');
+  sSel.innerHTML = '';
+  semesterList.forEach(s => { sSel.innerHTML += `<option value="${s}" ${s===currentSemester?'selected':''}>${s}</option>`; });
+  sSel.onchange = (e) => { 
+    currentSemester = e.target.value; 
+    currentAcademicYear = currentSemester.split('-')[0] + '-' + currentSemester.split('-')[1];
+    localStorage.setItem('currentSemester', currentSemester); 
+    loadData(); 
+  };
 }
 
 /* ============================================================
  * 操作逻辑
  * ============================================================ */
-// ★ 修改1：全局搜索修复，全部改用 allStudents.find
 function showPointsModal(id, type) {
   if (!isAdmin) return alert('只有管理员才能操作');
   const s = allStudents.find(x => x.id === id);
@@ -787,7 +812,6 @@ function showDormDetailModal(dormNo) {
   showModal(`${dormNo} 宿舍详情`, html);
 }
 
-// ★ 修改5：新增调整宿舍逻辑
 async function changeDorm(id, name) {
   if (!isAdmin) return;
   const newDorm = prompt(`请输入 ${name} 的新宿舍号：`, "");
@@ -840,7 +864,6 @@ document.getElementById('importVolunteerFile').onchange = function(e) {
 
       if (isNaN(hours) || hours <= 0) continue;
       
-      // ★ 修改：全局匹配
       const s = allStudents.find(x => x.student_no === no);
       if (!s) continue;
       
@@ -989,7 +1012,7 @@ function closeModal() { document.getElementById('modal').style.display = 'none';
 
 document.querySelectorAll('.close').forEach(b => b.onclick = closeModal);
 
-// ★ 修改2：左右标签隔离
+// ★ 左右标签隔离
 document.querySelectorAll('.left-panel .tab-btn').forEach(btn => {
   btn.onclick = () => {
     document.querySelectorAll('.left-panel .tab-btn').forEach(b => b.classList.remove('active'));
@@ -1010,6 +1033,31 @@ document.querySelectorAll('.right-panel .tab-btn').forEach(btn => {
 document.getElementById('themeToggle').onclick = () => {
   currentThemeIndex = (currentThemeIndex + 1) % themes.length;
   document.body.className = themes[currentThemeIndex];
+};
+
+// ★ 超级管理员专属：新建学期、删除班级
+document.getElementById('addSemesterBtn').onclick = () => {
+  if (!document.body.classList.contains('is-super-admin')) return;
+  const n = prompt('请输入新学期名称（如 2027-2028-1）：');
+  if (!n || !n.trim()) return;
+  if (semesterList.includes(n.trim())) return alert('该学期已存在');
+  semesterList.push(n.trim());
+  localStorage.setItem('semesterList', JSON.stringify(semesterList));
+  currentSemester = n.trim();
+  localStorage.setItem('currentSemester', currentSemester);
+  alert('新学期待建成功，已自动切换！');
+  loadData();
+};
+
+document.getElementById('deleteClassBtn').onclick = async () => {
+  if (!document.body.classList.contains('is-super-admin')) return;
+  const clsName = classes.find(c => c.id === currentClassId)?.name || '当前班级';
+  if (!confirm(`⚠️ 危险操作！\n\n确定要删除【${clsName}】吗？\n该班级下的所有学生、加减分记录、志愿时长、体测成绩将被永久清空，无法恢复！`)) return;
+  if (!confirm(`再次确认：真的要彻底删除【${clsName}】及其全部数据吗？`)) return;
+  
+  await sb.from('classes').delete().eq('id', currentClassId);
+  alert('班级已删除');
+  loadData();
 };
 
 document.getElementById('addStudentBtn').onclick = async () => {
@@ -1035,7 +1083,7 @@ document.getElementById('addClassBtn').onclick = async () => {
   loadData();
 };
 
-// ★ 修改：全局搜索，并显示班级标签
+// ★ 全局搜索，并显示班级标签
 document.getElementById('studentSearchInput').oninput = function() {
   const keyword = this.value.trim().toLowerCase();
   const el = document.getElementById('allStudents');
